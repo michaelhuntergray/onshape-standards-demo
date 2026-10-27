@@ -35,6 +35,7 @@ export const holeEdgeCheck = defineFeature(function(context is Context, id is Id
         // round holes = closed circular edges (length 2 pi r) that are inner loops of the face and open into a through-wall.
         // Skipped: arcs such as corner fillets, the outer rim of a round plate, and blind pockets (floor is a lone disc).
         var holes = [];
+        var innerRims = []; // every round inner loop, through or blind: none of them is part edge
         for (var e in evaluateQuery(context, qGeometry(edges, GeometryType.CIRCLE)))
         {
             const circle = evCurveDefinition(context, { "edge" : e });
@@ -48,6 +49,7 @@ export const holeEdgeCheck = defineFeature(function(context is Context, id is Id
             const probe = p + normalize(p - circle.coordSystem.origin) * eps;
             if (evDistance(context, { "side0" : probe, "side1" : definition.face }).distance > 0.5 * eps)
                 continue;
+            innerRims = append(innerRims, e);
 
             // through: the wall's far rim borders a face that has other edges; a blind pocket's floor is a lone disc
             const wall = qSubtraction(qAdjacent(e, AdjacencyType.EDGE, EntityType.FACE), definition.face);
@@ -65,7 +67,8 @@ export const holeEdgeCheck = defineFeature(function(context is Context, id is Id
         if (size(holes) == 0)
             throw regenError("No round through-holes found on the selected face.", ["face"]);
 
-        const outer = qSubtraction(edges, qUnion(holes));
+        // part edge = the face's edges minus every round inner loop, so hole-to-hole gaps are not measured
+        const outer = qSubtraction(edges, qUnion(innerRims));
         const required = definition.factor * definition.thickness;
         var bad = [];
         var worst = inf * meter;

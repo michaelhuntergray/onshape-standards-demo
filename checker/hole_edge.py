@@ -83,6 +83,8 @@ def main(argv: list[str] | None = None) -> int:
     a = ap.parse_args(argv)
     rule = json.loads(RULE.read_text())
     factor = a.factor if a.factor is not None else rule["limit"]["factor"]
+    if a.thickness <= 0 or factor <= 0:
+        ap.error("--thickness and --factor must be positive")
     results = check(import_step(a.step), a.thickness, factor)
     print(f"rule: {rule['title']}: rim-to-edge >= {factor:g} x {a.thickness:g} mm = {factor * a.thickness:g} mm")
     for i, h in enumerate(results, 1):
