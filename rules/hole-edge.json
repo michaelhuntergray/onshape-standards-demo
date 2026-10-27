@@ -1,0 +1,14 @@
+{
+  "id": "hole-edge-distance",
+  "title": "Minimum distance from a hole to the part edge (sheet metal)",
+  "applies_to": "flat sheet-metal or plate parts, holes through the thickness",
+  "measure": "shortest distance from the hole's rim to the part's outer boundary",
+  "limit": { "factor": 2.0, "of": "material thickness" },
+  "source": {
+    "name": "Fabcon, Sheet Metal Design for Manufacturability Guide (published 2026-03-02, checked 2026-10-27)",
+    "text": "Keep at least 1.5-2x material thickness from any part edge.",
+    "url": "https://fabcon.com/articles/sheet-metal-fabrication/sheet-metal-dfm-guide/",
+    "note": "2.0 is the conservative end of that range. Protolabs gives fixed distances instead; see docs/sources.md."
+  },
+  "why": "a hole too close to the edge tears, bulges or distorts when the part is punched, cut or bent"
+}
