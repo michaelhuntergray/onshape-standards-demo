@@ -32,10 +32,15 @@ export const holeEdgeCheck = defineFeature(function(context is Context, id is Id
     {
         const edges = qAdjacent(definition.face, AdjacencyType.EDGE, EntityType.EDGE);
 
-        // round holes = closed circular edges (length 2 pi r) that are inner loops of the face and open into a through-wall.
-        // Skipped: arcs such as corner fillets, the outer rim of a round plate, and blind pockets (floor is a lone disc).
+        // depth of the part along the face normal, to tell through-holes from counterbores and blind pockets
+        const cs = coordSystem(evPlane(context, { "face" : definition.face }));
+        const partBox = evBox3d(context, { "topology" : qOwnerBody(definition.face), "cSys" : cs });
+        const partDepth = partBox.maxCorner[2] - partBox.minCorner[2];
+
+        // round holes = closed circular edges (length 2 pi r) that are inner loops of the face and whose wall runs
+        // the full part depth. Skipped: arcs such as corner fillets, the outer rim of a round plate, blind pockets
+        // and counterbores (wall shorter than the part, whatever the floor looks like).
         var holes = [];
-        var innerRims = []; // every round inner loop, through or blind: none of them is part edge
         for (var e in evaluateQuery(context, qGeometry(edges, GeometryType.CIRCLE)))
         {
             const circle = evCurveDefinition(context, { "edge" : e });
@@ -49,26 +54,54 @@ export const holeEdgeCheck = defineFeature(function(context is Context, id is Id
             const probe = p + normalize(p - circle.coordSystem.origin) * eps;
             if (evDistance(context, { "side0" : probe, "side1" : definition.face }).distance > 0.5 * eps)
                 continue;
-            innerRims = append(innerRims, e);
 
-            // through: the wall's far rim borders a face that has other edges; a blind pocket's floor is a lone disc
             const wall = qSubtraction(qAdjacent(e, AdjacencyType.EDGE, EntityType.FACE), definition.face);
-            const farRims = qSubtraction(qGeometry(qAdjacent(wall, AdjacencyType.EDGE, EntityType.EDGE), GeometryType.CIRCLE), e);
-            const farFaces = qSubtraction(qAdjacent(farRims, AdjacencyType.EDGE, EntityType.FACE), wall);
-            var blind = false;
-            for (var f in evaluateQuery(context, farFaces))
-            {
-                if (size(evaluateQuery(context, qAdjacent(f, AdjacencyType.EDGE, EntityType.EDGE))) == 1)
-                    blind = true;
-            }
-            if (!blind)
+            const wallBox = evBox3d(context, { "topology" : wall, "cSys" : cs });
+            const wallDepth = wallBox.maxCorner[2] - wallBox.minCorner[2];
+            if (wallDepth >= partDepth - TOL)
                 holes = append(holes, e);
         }
         if (size(holes) == 0)
             throw regenError("No round through-holes found on the selected face.", ["face"]);
 
-        // part edge = the face's edges minus every round inner loop, so hole-to-hole gaps are not measured
-        const outer = qSubtraction(edges, qUnion(innerRims));
+        // part edge = the face's outer boundary only. Group the face's edges into loops (edges sharing a vertex) and
+        // take the loop with the largest bounding box: it encloses every inner loop, so slots, cut-outs and other
+        // holes are never measured as edge.
+        var remaining = evaluateQuery(context, edges);
+        var outerLoop = qNothing();
+        var outerSize = -1 * meter;
+        while (size(remaining) > 0)
+        {
+            var loop = [remaining[0]];
+            remaining = remaining[1:size(remaining)];
+            var grew = true;
+            while (grew)
+            {
+                grew = false;
+                var rest = [];
+                for (var c in remaining)
+                {
+                    const touching = evaluateQuery(context, qIntersection([qUnion(loop),
+                            qAdjacent(c, AdjacencyType.VERTEX, EntityType.EDGE)]));
+                    if (size(touching) > 0)
+                    {
+                        loop = append(loop, c);
+                        grew = true;
+                    }
+                    else
+                        rest = append(rest, c);
+                }
+                remaining = rest;
+            }
+            const box = evBox3d(context, { "topology" : qUnion(loop), "cSys" : cs });
+            const extent = norm(box.maxCorner - box.minCorner);
+            if (extent > outerSize)
+            {
+                outerSize = extent;
+                outerLoop = qUnion(loop);
+            }
+        }
+        const outer = outerLoop;
         const required = definition.factor * definition.thickness;
         var bad = [];
         var worst = inf * meter;
