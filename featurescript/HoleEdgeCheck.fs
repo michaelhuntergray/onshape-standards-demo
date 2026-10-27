@@ -48,11 +48,13 @@ export const holeEdgeCheck = defineFeature(function(context is Context, id is Id
             if (abs(evLength(context, { "entities" : e }) - 2 * PI * r) > TOL)
                 continue;
 
-            // inner loop: a point just outside the circle still lies on the face; for the outer rim it does not
+            // inner loop (a hole): a point just INSIDE the circle is void. For the outer rim it lies on the face.
+            // Probing inward never depends on how close the hole is to the part edge (an outward probe lands off
+            // the face when the gap is smaller than the probe step and wrongly drops the hole).
             const p = evEdgeTangentLine(context, { "edge" : e, "parameter" : 0 }).origin;
             const eps = 0.01 * r;
-            const probe = p + normalize(p - circle.coordSystem.origin) * eps;
-            if (evDistance(context, { "side0" : probe, "side1" : definition.face }).distance > 0.5 * eps)
+            const probe = p + normalize(circle.coordSystem.origin - p) * eps;
+            if (evDistance(context, { "side0" : probe, "side1" : definition.face }).distance < 0.5 * eps)
                 continue;
 
             const wall = qSubtraction(qAdjacent(e, AdjacencyType.EDGE, EntityType.FACE), definition.face);
