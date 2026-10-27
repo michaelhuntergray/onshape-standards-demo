@@ -3,7 +3,7 @@
 The decisions, in the order they were made. Each one notes who decided and whether it has been verified.
 
 ## 1. Rescoped from topology optimization to standards-driven checking
-Decided by Michael. The career-fair demo shows AI reading a design standard and enforcing it on CAD, replacing the topology optimizer. The topology optimizer stays in its own repo.
+Decided by the project owner. The career-fair demo shows AI reading a design standard and enforcing it on CAD, replacing the topology optimizer. The topology optimizer stays in its own repo.
 **Status:** verified (ticket brief).
 
 ## 2. One rule: hole-to-edge distance in sheet metal

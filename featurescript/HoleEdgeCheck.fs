@@ -32,16 +32,38 @@ export const holeEdgeCheck = defineFeature(function(context is Context, id is Id
     {
         const edges = qAdjacent(definition.face, AdjacencyType.EDGE, EntityType.EDGE);
 
-        // round holes = closed circular edges (length 2 pi r); arcs such as corner fillets are left in the boundary
+        // round holes = closed circular edges (length 2 pi r) that are inner loops of the face and open into a through-wall.
+        // Skipped: arcs such as corner fillets, the outer rim of a round plate, and blind pockets (floor is a lone disc).
         var holes = [];
         for (var e in evaluateQuery(context, qGeometry(edges, GeometryType.CIRCLE)))
         {
-            const r = evCurveDefinition(context, { "edge" : e }).radius;
-            if (abs(evLength(context, { "entities" : e }) - 2 * PI * r) < TOL)
+            const circle = evCurveDefinition(context, { "edge" : e });
+            const r = circle.radius;
+            if (abs(evLength(context, { "entities" : e }) - 2 * PI * r) > TOL)
+                continue;
+
+            // inner loop: a point just outside the circle still lies on the face; for the outer rim it does not
+            const p = evEdgeTangentLine(context, { "edge" : e, "parameter" : 0 }).origin;
+            const eps = 0.01 * r;
+            const probe = p + normalize(p - circle.coordSystem.origin) * eps;
+            if (evDistance(context, { "side0" : probe, "side1" : definition.face }).distance > 0.5 * eps)
+                continue;
+
+            // through: the wall's far rim borders a face that has other edges; a blind pocket's floor is a lone disc
+            const wall = qSubtraction(qAdjacent(e, AdjacencyType.EDGE, EntityType.FACE), definition.face);
+            const farRims = qSubtraction(qGeometry(qAdjacent(wall, AdjacencyType.EDGE, EntityType.EDGE), GeometryType.CIRCLE), e);
+            const farFaces = qSubtraction(qAdjacent(farRims, AdjacencyType.EDGE, EntityType.FACE), wall);
+            var blind = false;
+            for (var f in evaluateQuery(context, farFaces))
+            {
+                if (size(evaluateQuery(context, qAdjacent(f, AdjacencyType.EDGE, EntityType.EDGE))) == 1)
+                    blind = true;
+            }
+            if (!blind)
                 holes = append(holes, e);
         }
         if (size(holes) == 0)
-            throw regenError("No round holes found on the selected face.", ["face"]);
+            throw regenError("No round through-holes found on the selected face.", ["face"]);
 
         const outer = qSubtraction(edges, qUnion(holes));
         const required = definition.factor * definition.thickness;
