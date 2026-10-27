@@ -61,5 +61,12 @@ def test_cli_rejects_non_positive_limits(flag):
     assert e.value.code == 2
 
 
+def test_overlapping_cuts_are_not_a_round_hole():
+    part = Pos(30, 20, 1) * Box(60, 40, 2) - Pos(55, 20, 1) * Cylinder(2, 4) - Pos(57, 20, 1) * Cylinder(2, 4) \
+        - Pos(10, 20, 1) * Cylinder(2.5, 4)
+    results = hole_edge.check(part, 2, 2)
+    assert [round(h.diameter, 3) for h in results] == [5.0]
+
+
 def test_no_personal_name_in_build_log():
     assert "Michael" not in (ROOT / "HOW-IT-WAS-BUILT.md").read_text()

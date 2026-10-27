@@ -48,6 +48,6 @@ Onshape's FeatureScript MCP Server (Onshape Labs, early preview) can do step 1 f
 ## Limits (read before quoting this)
 
 - The FeatureScript has **not been compiled or run in Onshape yet**. The Python checker is the tested reference, and the two use the same method.
-- The checker handles one rule, flat parts, round through-holes and one plate face. Slots and non-round cut-outs are skipped by the Python checker and count as part edge in the FeatureScript. It does not check holes near bends, which is a separate rule.
+- The checker handles one rule, flat parts, round through-holes and one plate face. Slots, overlapping cuts and other non-round cut-outs are not checked, and neither checker measures to them: distance is to the outer boundary only. It does not check holes near bends, which is a separate rule.
 - Sources disagree on the factor: Fabcon gives 1.5–2T and Protolabs gives fixed distances. The default of 2.0 is the conservative choice and can be changed. See [docs/sources.md](docs/sources.md).
 - AI output is a draft. `generate.sh` output has not been compiled, and a person reviews any checker before relying on it.

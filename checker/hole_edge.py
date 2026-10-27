@@ -67,6 +67,9 @@ def check(part: Shape, thickness: float, factor: float) -> list[HoleResult]:
         edges = wire.edges()
         if not edges or any(e.geom_type != GeomType.CIRCLE for e in edges):
             continue  # a slot or cut-out, not a round hole
+        r0, c0 = edges[0].radius, edges[0].arc_center
+        if any(abs(e.radius - r0) > 1e-4 or (e.arc_center - c0).length > 1e-4 for e in edges):
+            continue  # arcs of different circles (overlapping cuts): not one round hole
         if not _is_through(part, edges[0], n):
             continue  # blind pocket: out of scope, the rule is for through-holes
         r = edges[0].radius
