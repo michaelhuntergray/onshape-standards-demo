@@ -11,16 +11,16 @@ The rule is stored as data in [`rules/hole-edge.json`](rules/hole-edge.json), wh
 
 | Piece | What it is | Status |
 |---|---|---|
-| `checker/hole_edge.py` | Python and build123d. Reads a STEP file, finds the round holes in the plate face, measures the distance from each hole's rim to the nearest part edge, and gives PASS or FAIL against factor × thickness. | **Runs.** 13 tests pass; through-holes only, exits 2 if none found. |
+| `checker/hole_edge.py` | Python and build123d. Reads a STEP file, finds the round holes in the plate face, measures the distance from each hole's rim to the nearest part edge, and gives PASS or FAIL against factor × thickness. | **Runs.** All tests pass; through-holes only, exits 2 if none found. |
 | `featurescript/HoleEdgeCheck.fs` | The same check as an Onshape custom feature. You pick the plate face; holes that fail turn red and a warning gives the count, the required distance and the worst distance. | **Written, not yet compiled in Onshape.** |
-| `generate.sh` + `prompts/` | Sends the rule JSON to Claude (headless Claude Code) and gets a FeatureScript checker back. | **Runs.** One sample output is in `out/`, not compiled. |
+| `generate.sh` + `prompts/` | Sends the rule JSON to Claude (headless Claude Code) and gets a FeatureScript checker back. | **Runs.** One raw, unreviewed sample is in `out/`, kept as-is to show what the AI drafts. It is not compiled and has known bugs: it measures to slots and other cut-outs as well as the outer edge, and it doesn't skip blind pockets. `featurescript/HoleEdgeCheck.fs` is the reviewed version. |
 | `examples/plate.step` | A 60 × 40 × 2 mm plate with three holes on either side of the 2T = 4 mm limit. | Built by `examples/make_plate.py`. |
 
 ## Run it
 
 ```sh
 uv sync
-uv run pytest -q                                         # 13 passed
+uv run pytest -q                                         # all pass
 uv run python examples/make_plate.py                     # writes examples/plate.step
 uv run python checker/hole_edge.py examples/plate.step --thickness 2
 ```

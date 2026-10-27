@@ -1,3 +1,5 @@
+// RAW AI DRAFT from generate.sh, kept unreviewed as a sample. Not compiled. Known bugs: measures to slots and other
+// cut-outs (the rule means the outer boundary) and does not skip blind pockets. Use featurescript/HoleEdgeCheck.fs.
 // Rule: hole-edge-distance - Minimum distance from a hole to the part edge (sheet metal)
 // Source: Fabcon, Sheet Metal Design for Manufacturability Guide (published 2026-03-02, checked 2026-10-27)
 // "Keep at least 1.5-2x material thickness from any part edge."
