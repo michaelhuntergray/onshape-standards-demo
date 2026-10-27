@@ -54,7 +54,8 @@ def test_cli_fails_on_blind_pocket_only_part(tmp_path):
     assert hole_edge.main([str(step), "--thickness", "2"]) == 2
 
 
-@pytest.mark.parametrize("flag", [["--thickness", "-2"], ["--thickness", "2", "--factor", "0"]])
+@pytest.mark.parametrize("flag", [["--thickness", "-2"], ["--thickness", "2", "--factor", "0"],
+                                  ["--thickness", "2", "--factor", "nan"], ["--thickness", "inf"]])
 def test_cli_rejects_non_positive_limits(flag):
     with pytest.raises(SystemExit) as e:
         hole_edge.main([str(ROOT / "examples" / "plate.step"), *flag])
